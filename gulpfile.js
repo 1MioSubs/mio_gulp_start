@@ -1,4 +1,4 @@
-const { src, dest, watch, parallel, series} = require("gulp");
+const { src, dest, watch, parallel, series } = require("gulp");
 const scss = require("gulp-sass")(require("sass"));
 const concat = require("gulp-concat");
 const uglify = require("gulp-uglify-es").default;
@@ -18,34 +18,40 @@ const fsdir = require("fs");
 
 function pages() {
   return src("app/html/pages/*.html")
-    .pipe(include({
-      includePaths: "app/html/components"
-    }))
-    .pipe(dest("app"))
+    .pipe(
+      include({
+        includePaths: "app/html/components",
+      })
+    )
+    .pipe(dest("app"));
 }
 
 function fonts() {
   return src("app/src/fonts/**/*.*")
-    .pipe(fonter({
-      formats: ['woff', 'ttf']
-    }))
+    .pipe(
+      fonter({
+        formats: ["woff", "ttf"],
+      })
+    )
     .pipe(src("app/fonts/*.ttf"))
     .pipe(ttf2woff2())
-    .pipe(dest("app/fonts"))
+    .pipe(dest("app/fonts"));
 }
 
 function images() {
-  return src(["app/src/images/**/*.*", "!app/src/images/**/*.svg"])
-    .pipe(newer("app/images"))
-    .pipe(avif({ quality: 50 }))
-    .pipe(src("app/src/images/**/*.*"))
-    .pipe(newer("app/images"))
-    .pipe(webp())
-    .pipe(src("app/src/images/**/*.*"))
-    .pipe(newer("app/images"))
-    .pipe(imagemin())
-    .pipe(dest("app/images"))
-    .pipe(browserSync.stream())
+  return (
+    src(["app/src/images/**/*.*"]) //, "!app/src/images/**/*.svg"])
+      // .pipe(newer("app/images"))
+      // .pipe(avif({ quality: 50 }))
+      // .pipe(src("app/src/images/**/*.*"))
+      // .pipe(newer("app/images"))
+      // .pipe(webp())
+      // .pipe(src("app/src/images/**/*.*"))
+      .pipe(newer("app/images"))
+      .pipe(imagemin())
+      .pipe(dest("app/images"))
+      .pipe(browserSync.stream())
+  );
 }
 
 function cleanSprite(done) {
@@ -97,24 +103,27 @@ function styles() {
 }
 
 function scripts() {
-  return src(["app/js/src/**/*.js"])
-    // .pipe(concat("main.min.js"))
-    .pipe(rename({ suffix: ".min" }))
-    .pipe(uglify())
-    .pipe(dest("app/js"))
-    .pipe(browserSync.stream());
+  return (
+    src(["app/js/src/**/*.js"])
+      // .pipe(concat("main.min.js"))
+      .pipe(rename({ suffix: ".min" }))
+      .pipe(uglify())
+      .pipe(dest("app/js"))
+      .pipe(browserSync.stream())
+  );
 }
 
 function scriptsLibs() {
   return (
     src([
-      "node_modules/jquery/dist/jquery.js",
+      // "node_modules/jquery/dist/jquery.js",
+      // "node_modules/aos/dist/aos.js",
       // "node_modules/ion-rangeslider/js/ion.rangeSlider.js",
       // "node_modules/jquery-form-styler/dist/jquery.formstyler.js",
       // "node_modules/slick-carousel/slick/slick.js",
       // "node_modules/rateyo/src/jquery.rateyo.js",
       // "node_modules/@fancyapps/fancybox/dist/jquery.fancybox.js",
-      // "app/js/libs/**/*.js",
+      "app/js/libs/**/*.js",
     ])
       .pipe(concat("libs.min.js"))
       // .pipe(rename({ suffix: ".min" }))
