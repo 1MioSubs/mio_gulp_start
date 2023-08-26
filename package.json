@@ -10,6 +10,7 @@
   "license": "ISC",
   "devDependencies": {
     "@fancyapps/fancybox": "^3.5.7",
+    "@fancyapps/ui": "^5.0.22",
     "aos": "^2.3.4",
     "browser-sync": "^2.29.3",
     "gulp": "^4.0.2",
