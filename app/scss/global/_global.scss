@@ -1,3 +1,31 @@
+html {
+  box-sizing: border-box;
+}
+
+*,
+*::after,
+*::before {
+  box-sizing: inherit;
+}
+
+a {
+  text-decoration: none;
+  // font: inherit;
+  // color: inherit;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
 html,
 body {
   height: 100%;
@@ -5,9 +33,9 @@ body {
 
 body {
   color: $default;
-  font-size: 16px;
-  line-height: 26px;
-  @extend %roboto-500;
+  font-size: 20px;
+  line-height: normal;
+  @extend %roboto-400;
   display: flex;
   flex-direction: column;
 }
@@ -17,7 +45,7 @@ body {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 15px;
+  // padding: 0 10px;
 }
