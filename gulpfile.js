@@ -8,11 +8,13 @@ const clean = require("gulp-clean");
 const avif = require("gulp-avif");
 const webp = require("gulp-webp");
 const imagemin = require("gulp-imagemin");
+const rename = require("gulp-rename");
 const newer = require("gulp-newer");
 const fonter = require("gulp-fonter");
 const ttf2woff2 = require("gulp-ttf2woff2");
 const svgSprite = require("gulp-svg-sprite");
 const include = require("gulp-include");
+const fsdir = require("fs");
 
 function pages() {
   return src("app/html/pages/*.html")
@@ -20,7 +22,6 @@ function pages() {
       includePaths: "app/html/components"
     }))
     .pipe(dest("app"))
-    .pipe(browserSync.stream())
 }
 
 function fonts() {
@@ -43,16 +44,27 @@ function images() {
     .pipe(src("app/src/images/**/*.*"))
     .pipe(newer("app/images"))
     .pipe(imagemin())
-    .pipe(dest("app/images"));
+    .pipe(dest("app/images"))
+    .pipe(browserSync.stream())
 }
 
-function cleanSprite() {
-  return src("app/images/sprite")
-    .pipe(clean());
+function cleanSprite(done) {
+  if (fsdir.existsSync("app/images/sprite.svg")) {
+    return src([
+      "app/images/sprite.svg",
+      "app/images/stack/sprite.stack.html",
+    ]).pipe(clean());
+  }
+  done();
 }
 
 function spriteSvg() {
-  return src("app/images/**/*.svg")
+  return src([
+    "app/images/**/*.svg",
+    "!app/images/sprite.svg",
+    "!app/images/stack",
+    "!app/images/stack/sprite.stack.html",
+  ])
     .pipe(
       svgSprite({
         mode: {
@@ -63,24 +75,53 @@ function spriteSvg() {
         },
       })
     )
-    .pipe(dest("app/images/sprite"));
+    .pipe(dest("app/images"));
 }
 
 function styles() {
-  return src("app/scss/style.scss")
-    .pipe(autoprefixer({ overrideBrowserslist: ['last 10 version']}))
-    .pipe(concat("style.min.css"))
-    .pipe(scss({ outputStyle: "compressed" }))
-    .pipe(dest("app/css"))
-    .pipe(browserSync.stream())
+  return (
+    src("app/scss/*.scss")
+      .pipe(scss({ outputStyle: "expanded" })) //compressed -  expanded
+      // .pipe(concat("style.min.css"))
+      .pipe(rename({ suffix: ".min" }))
+      .pipe(
+        autoprefixer({
+          overrideBrowserslist: ["last 10 versions"],
+          add: true,
+          grid: false,
+        })
+      )
+      .pipe(dest("app/css"))
+      .pipe(browserSync.stream())
+  );
 }
 
 function scripts() {
-  return src(["app/js/main.js"])
-    .pipe(concat("main.min.js"))
+  return src(["app/js/src/**/*.js"])
+    // .pipe(concat("main.min.js"))
+    .pipe(rename({ suffix: ".min" }))
     .pipe(uglify())
     .pipe(dest("app/js"))
-    .pipe(browserSync.stream())
+    .pipe(browserSync.stream());
+}
+
+function scriptsLibs() {
+  return (
+    src([
+      "node_modules/jquery/dist/jquery.js",
+      "node_modules/ion-rangeslider/js/ion.rangeSlider.js",
+      "node_modules/jquery-form-styler/dist/jquery.formstyler.js",
+      "node_modules/slick-carousel/slick/slick.js",
+      "node_modules/rateyo/src/jquery.rateyo.js",
+      "node_modules/@fancyapps/fancybox/dist/jquery.fancybox.js",
+      "app/js/libs/**/*.js",
+    ])
+      .pipe(concat("libs.min.js"))
+      // .pipe(rename({ suffix: ".min" }))
+      .pipe(uglify())
+      .pipe(dest("app/js"))
+      .pipe(browserSync.stream())
+  );
 }
 
 function watching() {
@@ -88,28 +129,43 @@ function watching() {
     server: {
       baseDir: "app/",
     },
+    notify: false,
   });
   watch(["app/scss/**/*.scss"], styles);
-  watch(["app/src/images"], images);
-  watch(["app/js/**/*.js", "!app/js/main.min.js"], scripts);
+  watch(["app/js/src/**/*.js"], scripts);
+  watch(["app/js/libs/**/*.js"], scriptsLibs);
   watch(["app/html/**/*.html"], pages);
+  watch(["app/src/images"], images);
+  watch(
+    [
+      "app/images/**/*.svg",
+      "!app/images/sprite.svg",
+      "!app/images/stack",
+      "!app/images/stack/sprite.stack.html",
+    ],
+    spriteSvg
+  );
   watch(["app/*.html"]).on("change", browserSync.reload);
 }
 
-function cleanDist() {
-  return src("dist")
-    .pipe(clean())
+function cleanDist(done) {
+  if (fsdir.existsSync("dist")) {
+    return src("dist", { read: false }).pipe(clean({ force: true }));
+  }
+  done();
 }
 
 function building() {
   return src(
     [
-      "app/css/style.min.css",
+      "app/css/*.css",
       "app/fonts/**/*.*",
       "app/images/**/*.*",
-      "app/js/main.min.js",
+      "app/js/*.js",
       "app/**/*.html",
-      "!app/images/sprite/stack/sprite.stack.html",
+      "!app/images/**/*.svg",
+      "app/images/sprite.svg",
+      "!app/images/stack/sprite.stack.html",
       "!app/html/**/*.html",
     ],
     { base: "app" }
@@ -127,6 +183,13 @@ exports.watching = watching;
 exports.cleanDist = cleanDist;
 exports.building = building;
 
-exports.sprite = series(cleanSprite, spriteSvg);
-exports.build = series(cleanDist, cleanSprite, spriteSvg, building);
-exports.default = parallel(styles, series(images, spriteSvg), scripts, pages, watching);
+exports.resprite = series(cleanSprite, spriteSvg);
+exports.build = series(cleanDist, building);
+exports.default = parallel(
+  styles,
+  scripts,
+  scriptsLibs,
+  images,
+  pages,
+  watching
+);
