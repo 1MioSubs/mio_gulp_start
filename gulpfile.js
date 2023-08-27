@@ -17,10 +17,10 @@ const include = require("gulp-include");
 const fsdir = require("fs");
 
 function pages() {
-  return src("app/html/pages/*.html")
+  return src(["app/src/html/pages/**/*.html", "!app/src/html/pages/template/**/*.html"])
     .pipe(
       include({
-        includePaths: "app/html/components",
+        includePaths: "app/src/html/components",
       })
     )
     .pipe(dest("app"));
@@ -38,20 +38,28 @@ function fonts() {
     .pipe(dest("app/fonts"));
 }
 
-function images() {
-  return (
-    src(["app/src/images/**/*.*"]) //, "!app/src/images/**/*.svg"])
-      // .pipe(newer("app/images"))
-      // .pipe(avif({ quality: 50 }))
-      // .pipe(src("app/src/images/**/*.*"))
-      // .pipe(newer("app/images"))
-      // .pipe(webp())
-      // .pipe(src("app/src/images/**/*.*"))
-      .pipe(newer("app/images"))
-      .pipe(imagemin())
-      .pipe(dest("app/images"))
-      .pipe(browserSync.stream())
-  );
+function imagesAvif() {
+  return src(["app/src/images/**/*.*", "!app/src/images/**/*.svg"])
+    .pipe(newer("app/images/avif"))
+    .pipe(avif({ quality: 50 }))
+    .pipe(dest("app/images/avif"))
+    .pipe(browserSync.stream());
+}
+  
+function imagesWebp() {
+  return src(["app/src/images/**/*.*", "!app/src/images/**/*.svg"])
+    .pipe(newer("app/images/webp"))
+    .pipe(webp())
+    .pipe(dest("app/images/webp"))
+    .pipe(browserSync.stream());
+}
+
+function imagesAll() {
+  return src("app/src/images/**/*.*")
+    .pipe(newer("app/images"))
+    .pipe(imagemin())
+    .pipe(dest("app/images"))
+    .pipe(browserSync.stream());
 }
 
 function cleanSprite(done) {
@@ -81,12 +89,13 @@ function spriteSvg() {
         },
       })
     )
-    .pipe(dest("app/images"));
+    .pipe(dest("app/images/"))
+    .pipe(browserSync.stream());
 }
 
 function styles() {
   return (
-    src("app/scss/*.scss")
+    src("app/src/scss/*.scss")
       .pipe(scss({ outputStyle: "expanded" })) //compressed -  expanded
       // .pipe(concat("style.min.css"))
       .pipe(rename({ suffix: ".min" }))
@@ -104,7 +113,7 @@ function styles() {
 
 function scripts() {
   return (
-    src(["app/js/src/**/*.js"])
+    src(["app/src/javascript/src/**/*.js"])
       // .pipe(concat("main.min.js"))
       .pipe(rename({ suffix: ".min" }))
       .pipe(uglify())
@@ -124,7 +133,7 @@ function scriptsLibs() {
       // "node_modules/rateyo/src/jquery.rateyo.js",
       // "node_modules/@fancyapps/fancybox/dist/jquery.fancybox.js",
       // "node_modules/@fancyapps/ui/dist/fancybox/fancybox.umd.js",
-      "app/js/libs/**/*.js",
+      "app/src/javascript/libs/**/*.js",
     ])
       .pipe(concat("libs.min.js"))
       // .pipe(rename({ suffix: ".min" }))
@@ -141,11 +150,11 @@ function watching() {
     },
     notify: false,
   });
-  watch(["app/scss/**/*.scss"], styles);
+  watch(["app/src/scss/**/*.scss"], styles);
   watch(["app/js/src/**/*.js"], scripts);
   watch(["app/js/libs/**/*.js"], scriptsLibs);
-  watch(["app/html/**/*.html"], pages);
-  watch(["app/src/images"], images);
+  watch(["app/src/html/**/*.html"], pages);
+  watch(["app/src/images"], series(imagesAll, imagesAvif, imagesWebp));
   watch(
     [
       "app/images/**/*.svg",
@@ -173,10 +182,10 @@ function building() {
       "app/images/**/*.*",
       "app/js/*.js",
       "app/**/*.html",
-      "!app/images/**/*.svg",
-      "app/images/sprite.svg",
+      // "!app/images/**/*.svg",
+      // "app/images/sprite.svg",
       "!app/images/stack/sprite.stack.html",
-      "!app/html/**/*.html",
+      "!app/src/html/**/*.html",
     ],
     { base: "app" }
   ).pipe(dest("dist"));
@@ -184,7 +193,9 @@ function building() {
 
 exports.pages = pages;
 exports.fonts = fonts;
-exports.images = images;
+exports.imagesAll = imagesAll;
+exports.imagesAvif = imagesAvif;
+exports.imagesWebp = imagesWebp;
 exports.cleanSprite = cleanSprite;
 exports.spriteSvg = spriteSvg;
 exports.styles = styles;
@@ -199,7 +210,9 @@ exports.default = parallel(
   styles,
   scripts,
   scriptsLibs,
-  images,
+  series(imagesAll, spriteSvg),
+  imagesAvif,
+  imagesWebp,
   pages,
   watching
 );
