@@ -27,7 +27,7 @@ function pages() {
 }
 
 function fonts() {
-  return src("app/src/fonts/**/*.*")
+  return src("app/src/fonts")
     .pipe(
       fonter({
         formats: ["woff", "ttf"],
