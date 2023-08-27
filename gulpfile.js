@@ -154,6 +154,7 @@ function watching() {
   watch(["app/js/src/**/*.js"], scripts);
   watch(["app/js/libs/**/*.js"], scriptsLibs);
   watch(["app/src/html/**/*.html"], pages);
+  watch(["app/src/fonts/**/*.*"], fonts);
   watch(["app/src/images"], series(imagesAll, imagesAvif, imagesWebp));
   watch(
     [
@@ -198,7 +199,7 @@ exports.imagesAvif = imagesAvif;
 exports.imagesWebp = imagesWebp;
 exports.cleanSprite = cleanSprite;
 exports.spriteSvg = spriteSvg;
-exports.styles = styles;
+exports.styles = styles; 
 exports.scripts = scripts;
 exports.watching = watching;
 exports.cleanDist = cleanDist;
@@ -209,6 +210,7 @@ exports.build = series(cleanDist, building);
 exports.default = parallel(
   styles,
   scripts,
+  fonts,
   scriptsLibs,
   series(imagesAll, spriteSvg),
   imagesAvif,
