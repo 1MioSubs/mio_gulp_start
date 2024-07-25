@@ -14,10 +14,13 @@ const fonter = require("gulp-fonter");
 const ttf2woff2 = require("gulp-ttf2woff2");
 const svgSprite = require("gulp-svg-sprite");
 const include = require("gulp-include");
-const fsdir = require("fs");
+const fs = require("fs");
 
 function pages() {
-  return src(["app/src/html/pages/**/*.html", "!app/src/html/pages/template/**/*.html"])
+  return src([
+    "app/src/html/pages/**/*.html",
+    "!app/src/html/pages/template/**/*.html",
+  ])
     .pipe(
       include({
         includePaths: "app/src/html/components",
@@ -27,12 +30,13 @@ function pages() {
 }
 
 function fonts() {
-  return src("app/src/fonts")
+  return src("app/src/fonts/*.{ttf,otf}")
     .pipe(
       fonter({
         formats: ["woff", "ttf"],
       })
     )
+    .pipe(dest("app/fonts"))
     .pipe(src("app/fonts/*.ttf"))
     .pipe(ttf2woff2())
     .pipe(dest("app/fonts"));
@@ -45,7 +49,7 @@ function imagesAvif() {
     .pipe(dest("app/images/avif"))
     .pipe(browserSync.stream());
 }
-  
+
 function imagesWebp() {
   return src(["app/src/images/**/*.*", "!app/src/images/**/*.svg"])
     .pipe(newer("app/images/webp"))
@@ -63,7 +67,7 @@ function imagesAll() {
 }
 
 function cleanSprite(done) {
-  if (fsdir.existsSync("app/images/sprite.svg")) {
+  if (fs.existsSync("app/images/sprite.svg")) {
     return src([
       "app/images/sprite.svg",
       "app/images/stack/sprite.stack.html",
@@ -169,7 +173,7 @@ function watching() {
 }
 
 function cleanDist(done) {
-  if (fsdir.existsSync("dist")) {
+  if (fs.existsSync("dist")) {
     return src("dist", { read: false }).pipe(clean({ force: true }));
   }
   done();
@@ -199,7 +203,7 @@ exports.imagesAvif = imagesAvif;
 exports.imagesWebp = imagesWebp;
 exports.cleanSprite = cleanSprite;
 exports.spriteSvg = spriteSvg;
-exports.styles = styles; 
+exports.styles = styles;
 exports.scripts = scripts;
 exports.watching = watching;
 exports.cleanDist = cleanDist;
